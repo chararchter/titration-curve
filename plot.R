@@ -5,52 +5,70 @@ ph_hcl = data$ph_hcl
 ph_as = data$ph_as
 v_hcl = v_naoh[1:49]
 ph_hcl = ph_hcl[1:49]
-
-print(ph_hcl)
-
 phCounter = seq(1.8, 12, 0.2)
-# print(phCounter)
 phVolumeHCl = c()
+phVolumeAS = c()
+#############################################
+# isEqual = function(e,i){
+# 	if (e == i){
+# 		index = which(e == ph_hcl)[[1]]
+# 		phVolumeHCl = c(phVolumeHCl, v_hcl[index])
+# 	}
+# 	return(phVolumeHCl)
+# }
+# for (e in ph_hcl){
+# 	for (i in phCounter){
+# 		isEqual(e,i)		
+# 			if (e - 0.13 < i){
+# 			if (e + 0.13 > i){
+# 				index = which(e == ph_hcl)[[1]]
+# 				phVolumeHCl = c(phVolumeHCl, v_hcl[index])
+# 			}
+# 		}
+# 	}	
+# }
+#test if two vectors have the same weights
+# print(length(phCounter))
+# print(length(phVolumeHCl))
+#############################################
 
-for (e in ph_hcl){
-	for (i in phCounter){
-		if (e == i){
-			index = which(e == ph_hcl)[[1]]
-			# print(e)
-			# print(v_hcl[index])
-			phVolumeHCl = c(phVolumeHCl, v_hcl[index])
-		}
-		else if (e - 0.13 < i){
-			if (e + 0.13 > i){
-				index = which(e == ph_hcl)[[1]]
-				phVolumeHCl = c(phVolumeHCl, v_hcl[index])
-			}
-		}
-	}	
-}
-print(length(phCounter))
-print(length(phVolumeHCl))
-# test = data.frame(phCounter, phVolumeHCl)
-# print(test)
-
-# data_means = data.frame(ph_hcl, v_hcl)
-# print(data_means)
-# print((1.97+2.11)/2)
-
-# 1.97 - 1800
-# 2.00 - x
-# x = 2.00 * 1800 / 1.97
-
-# x = 2.8 * 2100 / 2.7
-# print(x)
-
-##################################
-# In R, I have an element x and a vector v.
-# I want to find the first index of an element in v that is equal to x.
-# which(x == v)[[1]]
-##################################
 hcl.spl = smooth.spline(v_hcl, ph_hcl)
 as.spl = smooth.spline(v_naoh, ph_as)
+
+#binārā meklēšana
+spl = function(val, e, spline) {
+	x_min = 0
+	x_max = 5000
+	while(TRUE) {
+		x_avg = (x_min + x_max) / 2
+		pred = predict(spline, x_avg)
+		y = pred$y
+		if(y < val - e) {
+			x_min = x_avg
+		} else if(y > val + e) {
+			x_max = x_avg
+		} else {
+			return(x_avg)
+		}
+	}
+}
+
+spl(2, 0.001, hcl.spl)
+
+for (y in phCounter){
+	precision = 0.001
+	phi = round(spl(y, precision, hcl.spl), digits = 0)
+	phVolumeHCl = c(phVolumeHCl, phi)
+	asi = round(spl(y, precision, as.spl), digits = 0)
+	phVolumeAS = c(phVolumeAS, asi)
+}
+
+corVolume = phVolumeAS - phVolumeHCl
+# print(corVolume)
+# print(phVolumeHCl)
+# print(phVolumeAS)
+test = data.frame(phCounter, phVolumeHCl, phVolumeAS, corVolume)
+print(test)
 
 plot.new()
 jpeg('ph_hcl.jpeg', width = 900, height = 500, units = "px", pointsize = 10)
